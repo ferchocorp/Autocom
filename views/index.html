@@ -1,0 +1,137 @@
+<html>
+	<head>
+		<meta charset='utf-8'>
+		<title>Chat</title>
+	</head>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		$(document).ready(function(){
+
+
+			const socket = io();
+			var output = $("#output").val();
+			var acciones = $("#acciones").val();
+			$("#output").hide();
+			function nickname()
+			{
+				$.confirm({
+				    title: 'Registro',
+				    content: '' +
+				    '<form action="" class="formName">' +
+				    '<div class="form-group">' +
+				    '<label>Coloca tu nickname</label>' +
+				    '<input type="text" placeholder="nickname" class="name form-control" required />' +
+				    '</div>' +
+				    '</form>',
+				    boxWidth: '500px',
+				    useBootstrap: false,
+				    buttons: {
+				        formSubmit: {
+				            text: 'Enviar',
+				            btnClass: 'btn-blue',
+				            action: function () {
+				                var name = this.$content.find('.name').val();
+				                if(!name){
+				                    $.alert('Tu nickname no puede estar vacio');
+				                    return false;
+				                }
+				                socket.emit("sendname", name);
+				            }
+				        },
+				    },
+				    onContentReady: function () {
+				        var jc = this;
+				        this.$content.find('form').on('submit', function (e) {
+				            e.preventDefault();
+				            jc.$$formSubmit.trigger('click'); 
+				        });
+				    }
+				});
+			}
+			
+			$("#send").on("click", function(){
+				var message = $("#message").val();
+				var username = $("#username").val();
+				var id_user = $("#id_user").val();
+				
+				var chat = new Object();
+				chat.username = username;
+				chat.message = message;
+				chat.id_user = id_user;
+				socket.emit("sendmessage",chat);
+			});
+
+			$("#message").on("keypress", function(){
+				socket.emit("typing",$("#username").val());
+			});
+
+			socket.on("messageserver", function(data){
+				$("#output").append( `<p>
+				<strong>${data.username}</strong>:${data.message} 
+				</p>`);
+			});
+
+			socket.on("typing", function(data){
+				$("#acciones").append( `<p>
+				<em>${data}</em>
+				</p>`);
+			});
+
+			socket.on("validateuser",function(data){
+				console.log(data);
+				if(data.resultado[0].valor)
+				{
+					alert("El nickname proporcionado ya existe, favor de escojer otro");
+					nickname();
+				}else
+				{
+					$("#username").val(data.name);
+					$("#id_user").val(data.id);
+					$("#output").show();
+				}
+			});
+			nickname();
+
+		});
+	</script>
+	<style>
+		#container{
+			margin:30px auto;
+			border:1px solid #ddd;
+			box-shadow: 1px 3px 5px rgba(0,0,0.5);
+			width: 50%;
+		}
+		#ventana{
+			padding: 14px 0;
+			margin:0, 20px;
+			border-bottom: 1px solid #e9e9e9;
+			color: #555;
+		}
+		#output p{
+			color: #aaa;
+			padding: 14px 0;
+			margin: 0 20px;
+			width: 50px;
+			display: inline;;
+		}
+		input{
+			display: block;box-sizing: border-box;
+			width: 100%;
+		}
+	</style>
+	<body>
+		<div id="container">
+			<div id="ventana">
+				<div id="output"></div>
+			</div>
+			<input type="text" id="username" placeholder="Usuario" readonly disabled="disabled">
+			<input type="hidden" id="id_user">
+			<input type="text" id="message" placeholder="Mensaje">
+			<button id="send">Enviar</button>
+		</div>
+	</body>
+</html>

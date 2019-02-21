@@ -1,0 +1,11 @@
+doctype html
+html(lang = 'es')
+	head
+		title = 'Chat'
+		meta(charset='utf-8')
+		script(src='/socket.io/socket.io.js')
+		script(src='ttps://code.jquery.com/jquery-3.3.1.min.js')
+		script
+			var websocket = io.connect();
+	body
+		h1 Hola Mundo
